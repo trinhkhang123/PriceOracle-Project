@@ -10,13 +10,17 @@ const {ethers} = require("hardhat");
 async function main() { 
   const [deployer] = await ethers.getSigners();
 
+  const fee = 3000;
+  
+  const factory = "0x1F98431c8aD98523631AE4a59f267346ea31F984";
+
   console.log("Deploying contracts with the account:", deployer.address);
   
   console.log("Account balance:", (await deployer.getBalance()).toString());
 
   const Deploy=await ethers.getContractFactory("UniswapV3Twap");
 
-  const deploy=await Deploy.deploy();
+  const deploy=await Deploy.deploy(fee,factory);
 
   console.log("Token address:",deploy.address);
 

@@ -5,7 +5,7 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import "@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol";
 
 contract UniswapV3Twap {
-    address public immutable token1;
+    address public token1;
 
     mapping (uint => address) pool;
 
@@ -13,54 +13,37 @@ contract UniswapV3Twap {
 
     uint24 public _fee ;
 
-    mapping (uint => address)  AddrToken;
+    mapping (uint => address)  addrToken;
 
-    mapping (address => uint)  ID;
+    mapping (address => uint)  id;
 
     uint256 public CountToken;
 
     address Owner;
   
-    constructor() {
-        _fee = 3000;
-        _factory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
+    constructor(uint24 fee, address factory) {
+        _fee = fee;
+        _factory = factory;
+        //_factory = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
         token1 = 0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C;
                  
        // ID[0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984] = 1;// UNI
         //ID[0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6] = 2;// WETH
        // ID[0x07865c6E87B9F70255377e024ace6630C1Eaa37F] = 3;// USD//C
         //ID[0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60] = 4;// DAI
-        
-       // AddrToken[1]= 0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984;
-       // AddrToken[2]= 0xB4FBF271143F4FBf7B91A5ded31805e42b2208d6;
-       // AddrToken[3]= 0x07865c6E87B9F70255377e024ace6630C1Eaa37F;
-       // AddrToken[4]= 0xdc31Ee1784292379Fbb2964b3B9C4124D8F89C60;
 
         Owner = msg.sender;
-        //uint i;
-        /*for(i = 1;i<=4;i++)
-        {
-            address _pool = IUniswapV3Factory(_factory).getPool(
-                AddrToken[i],
-                _token1,
-                _fee
-            );
-            
-            require(_pool != address(0), "pool doesn't exist");
-
-            pool[i] = _pool;
-        }
-        */
+        
     }
 
-    function AddToken(address addrToken) public {
+    function addToken(address _addrToken) public {
         require(msg.sender == Owner, "You are not Admin");
-        require(ID[addrToken] == 0 , "Token already exist");
+        require(id[_addrToken] == 0 , "Token already exist");
         CountToken ++;
-        AddrToken[CountToken] = addrToken;
-        ID[addrToken] = CountToken;
+        addrToken[CountToken] = _addrToken;
+        id[_addrToken] = CountToken;
         address _pool = IUniswapV3Factory(_factory).getPool(
-                addrToken,
+                _addrToken,
                 token1,
                 _fee
             );
@@ -69,28 +52,14 @@ contract UniswapV3Twap {
     }
 
 
-    function estimateAmountOut(
+    function price(
         address tokenIn,
         uint128 amountIn,
         uint32 secondsAgo
     ) external view returns (uint amountOut) {
-        uint Verify=0;
-        for(uint i=1;i<=CountToken;i++)
-        {
-            if(tokenIn == AddrToken[i]) {
-                Verify=i;
-            }
-        }
-         address _pool = IUniswapV3Factory(_factory).getPool(
-                tokenIn,
-                token1,
-                _fee
-            );
-        require(_pool != address(0),"Pool doesn't exist" );
-        
-        require(Verify > 0 , "Token Address Wrong ");
+        uint verify=id[tokenIn];
 
-        //pool[Verify]=address(_pool);
+        require(verify > 0 , "Token Address Wrong ");
 
         address tokenOut = token1;
 
@@ -103,7 +72,7 @@ contract UniswapV3Twap {
 
         // int56 since tick * time = int24 * uint32
         // 56 = 24 + 32
-        (int56[] memory tickCumulatives, ) = IUniswapV3Pool(_pool).observe(
+        (int56[] memory tickCumulatives, ) = IUniswapV3Pool(pool[verify]).observe(
             secondsAgos
         );
 
